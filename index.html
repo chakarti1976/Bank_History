@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Nordea · Spending Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div class="bg-canvas">
+  <canvas id="bgCanvas"></canvas>
+</div>
+
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-mark">◈</span>
+        <span class="brand-name">Nordea Tracker</span>
+      </div>
+      <nav class="nav">
+        <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+        <button class="nav-btn" data-view="statements">Statements</button>
+        <button class="nav-btn" data-view="transactions">Transactions</button>
+      </nav>
+      <div class="header-meta" id="headerMeta">No data yet</div>
+    </div>
+  </header>
+
+  <!-- ── DASHBOARD VIEW ─────────────────────────────────── -->
+  <main class="view active" id="view-dashboard">
+
+    <div class="kpi-row" id="kpiRow">
+      <div class="kpi-card skeleton"><div class="kpi-inner"><div class="kpi-label">Total spend</div><div class="kpi-value">—</div></div></div>
+      <div class="kpi-card skeleton"><div class="kpi-inner"><div class="kpi-label">Monthly avg</div><div class="kpi-value">—</div></div></div>
+      <div class="kpi-card skeleton"><div class="kpi-inner"><div class="kpi-label">Latest month</div><div class="kpi-value">—</div></div></div>
+      <div class="kpi-card skeleton"><div class="kpi-inner"><div class="kpi-label">Balance due</div><div class="kpi-value">—</div></div></div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card span-2">
+        <div class="chart-header">
+          <h3>Monthly spending overview</h3>
+          <div class="legend" id="overviewLegend"></div>
+        </div>
+        <div class="chart-wrap" style="height:280px"><canvas id="overviewChart"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header"><h3>Grocery by chain</h3></div>
+        <div class="chart-wrap" style="height:220px"><canvas id="grocChart"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header"><h3>Spend by category</h3></div>
+        <div class="chart-wrap" style="height:220px"><canvas id="donutChart"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header"><h3>Variable trends</h3></div>
+        <div class="chart-wrap" style="height:220px"><canvas id="trendChart"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header"><h3>Admin breakdown</h3></div>
+        <div class="chart-wrap" style="height:220px"><canvas id="adminChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="chart-header"><h3>Full spending statement</h3></div>
+      <div class="table-scroll">
+        <table id="plTable" class="pl-table"><tbody><tr><td colspan="10" class="empty-msg">Upload your PDF statements to see the analysis</td></tr></tbody></table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── STATEMENTS VIEW ────────────────────────────────── -->
+  <main class="view" id="view-statements">
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-icon">⬆</div>
+      <div class="upload-title">Drop Nordea PDF invoices here</div>
+      <div class="upload-sub">or click to browse · multiple files supported</div>
+      <input type="file" id="fileInput" accept=".pdf" multiple style="display:none">
+    </div>
+
+    <div id="parseStatus" class="parse-status" style="display:none"></div>
+
+    <div class="table-card" id="statementsCard" style="display:none">
+      <div class="chart-header"><h3>Uploaded statements</h3></div>
+      <div class="table-scroll">
+        <table class="pl-table" id="statementsTable">
+          <thead><tr>
+            <th>Period</th><th>Invoice date</th><th>Gross spend</th><th>Balance</th><th>Transactions</th><th></th>
+          </tr></thead>
+          <tbody id="statementsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── TRANSACTIONS VIEW ──────────────────────────────── -->
+  <main class="view" id="view-transactions">
+    <div class="filter-bar">
+      <select id="filterMonth" class="filter-select"><option value="">All periods</option></select>
+      <select id="filterCat" class="filter-select"><option value="">All categories</option></select>
+      <input type="text" id="filterSearch" class="filter-input" placeholder="Search merchant…">
+      <span class="tx-count" id="txCount">—</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table class="pl-table" id="txTable">
+          <thead><tr>
+            <th>Date</th><th>Merchant</th><th>Category</th><th>Chain</th><th class="num">Amount</th>
+          </tr></thead>
+          <tbody id="txBody"><tr><td colspan="5" class="empty-msg">Upload statements to see transactions</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+</div><!-- /app -->
+
+<!-- CDNs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  // Set PDF.js worker
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+</script>
+<script src="js/parser.js"></script>
+<script src="js/categorizer.js"></script>
+<script src="js/store.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
