@@ -6,10 +6,427 @@
 <title>Nordea · Spending Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   NORDEA TRACKER · FINANCIAL DARK THEME
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  --bg:         #060b18;
+  --bg-card:    #0c1526;
+  --bg-card2:   #111d35;
+  --border:     rgba(255,255,255,0.07);
+  --border2:    rgba(255,255,255,0.12);
+  --gold:       #c9a84c;
+  --gold-dim:   rgba(201,168,76,0.15);
+  --gold-glow:  rgba(201,168,76,0.06);
+  --green:      #34d399;
+  --red:        #f87171;
+  --blue:       #60a5fa;
+  --text:       #e2ddd4;
+  --text-dim:   #7a7568;
+  --text-mid:   #a89f93;
+  --mono:       'DM Mono', monospace;
+  --sans:       'Sora', sans-serif;
+
+  /* category palette */
+  --c-housing:  #3a7abf;
+  --c-grocery:  #4a9c35;
+  --c-travel:   #7c6fd4;
+  --c-dining:   #c49a2a;
+  --c-fashion:  #c0436a;
+  --c-health:   #22a87a;
+  --c-admin:    #8e5ba8;
+  --c-misc:     #6b6560;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── ANIMATED BACKGROUND CANVAS ── */
+.bg-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
+}
+#bgCanvas { width: 100%; height: 100%; }
+
+/* ── APP WRAPPER ── */
+#app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ── */
+.app-header {
+  background: rgba(6,11,24,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.brand-mark {
+  color: var(--gold);
+  font-size: 20px;
+  line-height: 1;
+}
+.brand-name {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  text-transform: uppercase;
+}
+.nav {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--sans);
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.nav-btn.active {
+  color: var(--gold);
+  background: var(--gold-dim);
+  font-weight: 500;
+}
+.header-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── VIEWS ── */
+.view {
+  display: none;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 28px 24px 80px;
+}
+.view.active { display: block; }
+
+/* ── KPI ROW ── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: var(--gold);
+  opacity: 0.6;
+}
+.kpi-card:hover { border-color: var(--border2); }
+.kpi-inner { padding-left: 12px; }
+.kpi-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  margin-bottom: 6px;
+}
+.kpi-value {
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1;
+}
+.kpi-value.green { color: var(--green); }
+.kpi-value.red   { color: var(--red); }
+.kpi-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 5px;
+}
+.kpi-card.skeleton .kpi-value { color: transparent; background: rgba(255,255,255,0.05); border-radius: 4px; }
+
+/* ── CHART GRID ── */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.chart-card.span-2 { grid-column: span 2; }
+.chart-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.chart-header h3 {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  font-family: var(--mono);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+.legend-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.chart-wrap { position: relative; }
+
+/* ── TABLE CARD ── */
+.table-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.table-scroll { overflow-x: auto; }
+.pl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 560px;
+}
+.pl-table th {
+  text-align: right;
+  padding: 6px 8px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  border-bottom: 1px solid var(--border2);
+  white-space: nowrap;
+}
+.pl-table th:first-child { text-align: left; }
+.pl-table td {
+  padding: 6px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.pl-table td:first-child { text-align: left; font-family: var(--sans); color: var(--text-mid); }
+.pl-table tr:last-child td { border-bottom: none; }
+.pl-table tr:hover td { background: rgba(255,255,255,0.02); }
+.pl-table .sec-hdr td {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  font-family: var(--mono);
+  padding-top: 16px;
+  border-bottom: none;
+  background: transparent;
+}
+.pl-table .sub-row td { color: var(--text-dim); font-size: 11px; }
+.pl-table .sub-row td:first-child { padding-left: 20px; }
+.pl-table .subtotal td { color: var(--text); border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); font-weight: 500; background: rgba(255,255,255,0.02); }
+.pl-table .total-row td { color: var(--gold); font-weight: 500; font-size: 13px; border-top: 1px solid var(--gold); border-bottom: none; padding-top: 10px; }
+.pl-table .mom-row td { color: var(--text-dim); font-size: 10px; border-bottom: none; padding-bottom: 8px; }
+.pl-table .green { color: var(--green) !important; }
+.pl-table .red   { color: var(--red) !important; }
+.pl-table .dim   { color: var(--text-dim) !important; }
+.pl-table .gold  { color: var(--gold) !important; font-style: italic; }
+.empty-msg { text-align: center !important; color: var(--text-dim); padding: 48px 20px !important; font-family: var(--sans) !important; font-size: 13px; }
+
+/* ── UPLOAD ZONE ── */
+.upload-zone {
+  border: 2px dashed rgba(201,168,76,0.3);
+  border-radius: 16px;
+  padding: 60px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: var(--gold-glow);
+  margin-bottom: 24px;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--gold);
+  background: var(--gold-dim);
+}
+.upload-icon {
+  font-size: 36px;
+  margin-bottom: 14px;
+  color: var(--gold);
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.upload-title { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+.upload-sub { font-size: 12px; color: var(--text-dim); font-family: var(--mono); }
+
+/* ── PARSE STATUS ── */
+.parse-status {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-mid);
+  margin-bottom: 16px;
+  line-height: 1.8;
+}
+.parse-status .ok  { color: var(--green); }
+.parse-status .err { color: var(--red); }
+.parse-status .working { color: var(--gold); }
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.filter-select, .filter-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.filter-select:focus, .filter-input:focus { border-color: var(--gold); }
+.filter-select option { background: var(--bg-card2); }
+.filter-input { flex: 1; min-width: 160px; }
+.tx-count { font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-left: auto; white-space: nowrap; }
+
+/* ── CAT BADGE ── */
+.cat-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+
+/* ── DELETE BTN ── */
+.btn-del {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.2);
+  color: var(--red);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: var(--mono);
+  transition: all 0.2s;
+}
+.btn-del:hover { background: rgba(248,113,113,0.2); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .kpi-row { grid-template-columns: 1fr 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .chart-card.span-2 { grid-column: span 1; }
+  .header-inner { padding: 0 16px; gap: 16px; }
+  .brand-name { display: none; }
+  .header-meta { display: none; }
+  .view { padding: 16px 16px 60px; }
+  .nav-btn { padding: 6px 10px; font-size: 12px; }
+}
+@media (max-width: 480px) {
+  .kpi-value { font-size: 20px; }
+  .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+}
+
+</style>
 </head>
 <body>
-
 <div class="bg-canvas">
   <canvas id="bgCanvas"></canvas>
 </div>
@@ -128,17 +545,1120 @@
 </div><!-- /app -->
 
 <!-- CDNs -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+
 <script>
   // Set PDF.js worker
   if (typeof pdfjsLib !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
 </script>
-<script src="js/parser.js"></script>
-<script src="js/categorizer.js"></script>
-<script src="js/store.js"></script>
-<script src="js/app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+</script>
+<script>
+/* parser.js — Nordea PDF invoice parser
+   Uses PDF.js to extract text, then applies Nordea-specific parsing logic.
+   Handles both the old format (no cardholder name per tx) and new (June 2026+).
+*/
+
+const NordeaParser = (() => {
+
+  // ── Extract all text lines from a PDF ArrayBuffer ─────────────────────
+  async function extractLines(arrayBuffer) {
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const allItems = [];
+
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      // Each item has .str (text) and .transform (matrix, position)
+      // transform[5] = Y, transform[4] = X
+      content.items.forEach(item => {
+        if (item.str.trim()) {
+          allItems.push({
+            str: item.str.trim(),
+            x: item.transform[4],
+            y: item.transform[5],
+            page: p
+          });
+        }
+      });
+    }
+
+    // Sort: page asc, then Y desc (top of page first), then X asc
+    allItems.sort((a, b) =>
+      a.page !== b.page ? a.page - b.page :
+      Math.abs(b.y - a.y) > 3 ? b.y - a.y : a.x - b.x
+    );
+
+    // Group items on the same Y-line
+    const lines = [];
+    let currentLine = [];
+    let lastY = null;
+    allItems.forEach(item => {
+      if (lastY !== null && Math.abs(item.y - lastY) > 4) {
+        if (currentLine.length) lines.push(currentLine.map(i => i.str).join(' '));
+        currentLine = [];
+      }
+      currentLine.push(item);
+      lastY = item.y;
+    });
+    if (currentLine.length) lines.push(currentLine.map(i => i.str).join(' '));
+
+    return lines;
+  }
+
+  // ── Parse amount string "1.234,56" or "1234,56" → number ──────────────
+  function parseAmount(str) {
+    if (!str) return 0;
+    // Remove thousands separator (.) then replace comma with dot
+    return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+  }
+
+  // ── Parse Finnish date "6.5.2026" → "2026-05-06" ─────────────────────
+  function parseDate(str) {
+    const m = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+    if (!m) return str;
+    return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  }
+
+  // ── Main parse function ────────────────────────────────────────────────
+  async function parse(arrayBuffer, filename) {
+    const lines = await extractLines(arrayBuffer);
+    const text = lines.join('\n');
+
+    // ── Extract invoice metadata ────────────────────────────────────────
+    const periodMatch = text.match(/Invoicing period[:\s]+(\d{1,2}\.\d{1,2}\.\d{4})\s*[-–]\s*(\d{1,2}\.\d{1,2}\.\d{4})/);
+    const invoiceDateMatch = text.match(/Invoice date[:\s]+(\d{1,2}\.\d{1,2}\.\d{4})/);
+    const amountMatch = text.match(/Amount[:\s]+([\d,.]+)\s+EUR/);
+    const balanceMatch = text.match(/Total Balance\s+([-\d,.]+)/);
+    const dueDateMatch = text.match(/Due date[:\s]+(\d{1,2}\.\d{1,2}\.\d{4})/);
+
+    const period = periodMatch
+      ? `${parseDate(periodMatch[1])} – ${parseDate(periodMatch[2])}`
+      : filename;
+
+    const periodLabel = periodMatch
+      ? formatPeriodLabel(periodMatch[1], periodMatch[2])
+      : filename.replace('.pdf','');
+
+    // ── Parse transactions ──────────────────────────────────────────────
+    const transactions = [];
+    const dateAmtPattern = /^(\d{1,2}\.\d{1,2}\.\d{4})\s+([-\d,.]+)\s+([-\d,.]+)/;
+    const txStartPattern = /^522580-\*\*-\*\*\*\*-0698\s+(Retail|Credit)/i;
+    const paymentPattern = /^01097841378\s+Payment\s+(\d{1,2}\.\d{1,2}\.\d{4})\s+([-\d,.]+)/i;
+    const creditIntPattern = /^01097841378\s+Credit interest\s+(\d{1,2}\.\d{1,2}\.\d{4})\s+([-\d,.]+)/i;
+    const cashbackPattern = /^522580-\*\*-\*\*\*\*-0698\s+Credit\s+FIN\s+Nordea\s+Cashback/i;
+
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Payment line
+      if (paymentPattern.test(line)) {
+        const m = line.match(paymentPattern);
+        transactions.push({
+          date: parseDate(m[1]),
+          merchant: 'Payment',
+          amount: parseAmount(m[2]),
+          category: 'payment',
+          type: 'payment'
+        });
+        i++;
+        continue;
+      }
+
+      // Cashback credit
+      if (cashbackPattern.test(line)) {
+        // look for the date amount on next lines
+        let j = i + 1;
+        while (j < lines.length && !dateAmtPattern.test(lines[j]) && j < i + 8) j++;
+        if (dateAmtPattern.test(lines[j])) {
+          const m = lines[j].match(dateAmtPattern);
+          transactions.push({
+            date: parseDate(m[1]),
+            merchant: 'Nordea Cashback',
+            amount: parseAmount(m[2]),
+            category: 'credit',
+            type: 'credit'
+          });
+        }
+        i = j + 1;
+        continue;
+      }
+
+      // Retail/Credit transaction
+      if (txStartPattern.test(line)) {
+        const typeMatch = line.match(/(Retail|Credit)/i);
+        const txType = typeMatch ? typeMatch[1].toLowerCase() : 'retail';
+        const countryMatch = line.match(/\b([A-Z]{3})\s*$/);
+        const country = countryMatch ? countryMatch[1] : '';
+
+        // Collect merchant lines until we hit a date+amount line
+        const merchantParts = [];
+        let j = i + 1;
+        const maxLook = Math.min(i + 10, lines.length);
+
+        while (j < maxLook) {
+          const l = lines[j];
+          if (dateAmtPattern.test(l)) break;
+          // Skip "Quantity invoiced", cardholder name, page headers
+          if (!/Quantity invoiced|CHAKAROV TIHOMIR|Nordea Bank|INVOICE -|Page \d/i.test(l)) {
+            merchantParts.push(l);
+          }
+          j++;
+        }
+
+        if (j < lines.length && dateAmtPattern.test(lines[j])) {
+          const m = lines[j].match(dateAmtPattern);
+          const rawMerchant = merchantParts
+            .filter(p => p.length > 0)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          transactions.push({
+            date: parseDate(m[1]),
+            merchant: cleanMerchant(rawMerchant),
+            rawMerchant: rawMerchant,
+            amount: parseAmount(m[2]),
+            country: country,
+            category: null, // filled by categorizer
+            type: txType
+          });
+        }
+        i = j + 1;
+        continue;
+      }
+
+      i++;
+    }
+
+    // Filter out zero-amount transactions
+    const retail = transactions.filter(t => t.type !== 'payment' && t.type !== 'credit' && t.amount !== 0);
+    const payments = transactions.filter(t => t.type === 'payment');
+    const credits = transactions.filter(t => t.type === 'credit');
+
+    const grossSpend = retail.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+
+    return {
+      filename,
+      period,
+      periodLabel,
+      invoiceDate: invoiceDateMatch ? parseDate(invoiceDateMatch[1]) : null,
+      dueDate: dueDateMatch ? parseDate(dueDateMatch[1]) : null,
+      invoiceAmount: amountMatch ? parseAmount(amountMatch[1]) : 0,
+      totalBalance: balanceMatch ? parseAmount(balanceMatch[1]) : 0,
+      grossSpend: Math.round(grossSpend),
+      transactions: retail,
+      payments,
+      credits,
+      txCount: retail.length
+    };
+  }
+
+  // ── Clean merchant name ────────────────────────────────────────────────
+  function cleanMerchant(raw) {
+    return raw
+      .replace(/VFI/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .replace(/^[\s\-]+/, '')
+      .trim()
+      .slice(0, 60); // cap length
+  }
+
+  // ── Format period label e.g. "Jan–Feb 2026" ───────────────────────────
+  function formatPeriodLabel(from, to) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const [,fm,fy] = from.match(/(\d{1,2})\.(\d{4})/) || from.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/) || [];
+    const [,tm,ty] = to.match(/(\d{1,2})\.(\d{4})/) || to.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/) || [];
+
+    // from "6.12.2025" → extract month/year
+    const fromParts = from.split('.');
+    const toParts = to.split('.');
+    if (fromParts.length < 3 || toParts.length < 3) return `${from} – ${to}`;
+
+    const fromMonth = months[parseInt(fromParts[1]) - 1];
+    const toMonth   = months[parseInt(toParts[1]) - 1];
+    const year      = toParts[2];
+
+    return `${fromMonth}–${toMonth} ${year}`;
+  }
+
+  return { parse };
+})();
+
+</script>
+<script>
+/* categorizer.js — Transaction categorization for Nordea spending tracker
+   Categories match the agreed clean structure from the spending analysis.
+*/
+
+const Categorizer = (() => {
+
+  // ── Category definitions ────────────────────────────────────────────────
+  const CATEGORIES = {
+    housing: {
+      label: 'Student housing',
+      group: 'fixed',
+      color: '#3a7abf',
+      keywords: ['YUGO', 'UNINEST', 'HIGHFIELD', 'UNINESTSTUDENTS', 'UNIINEST'],
+    },
+    gym: {
+      label: 'Gym · SATS',
+      group: 'fixed',
+      color: '#2b6ca3',
+      keywords: ['SATS FINLAND', 'SATS'],
+    },
+    sok: {
+      label: 'SOK (Prisma/S-Market)',
+      group: 'groceries',
+      color: '#1a8a68',
+      keywords: ['PRISMA', 'S-MARKET', 'S-MARKE', 'ALEPA', 'S MARKET'],
+    },
+    kesko: {
+      label: 'Kesko (K-stores)',
+      group: 'groceries',
+      color: '#3a7abf',
+      keywords: ['K-SUPERMARKET', 'K-MARKET', 'K-CITYMARKET', 'KSUPERMARKET', 'K SUPERMARKET', 'K MARKET', 'K CITYMARKET', 'KAIVOPUISTO', 'ESPLANADI', 'ARABIA', 'TRIPLA K-', 'K-SUPER', 'EROTTAJA', 'ROBA'],
+    },
+    lidl: {
+      label: 'Lidl',
+      group: 'groceries',
+      color: '#c04a42',
+      keywords: ['LIDL'],
+    },
+    grocOther: {
+      label: 'Other grocery',
+      group: 'groceries',
+      color: '#6b7e5a',
+      keywords: ['COMPASS GROUP', 'COMPASS', 'ALKO', 'SUPERALKO', 'TOKMANNI', 'RIMI', 'UUDENMAAN HERKK', 'LIHATUKKU', 'VEIJO', 'RUSTA'],
+    },
+    travel: {
+      label: 'Travel',
+      group: 'variable',
+      color: '#7c6fd4',
+      keywords: ['FINNAIR', 'FINAVIA', 'SCANDIC', 'VR LIPPU', 'TALLINK', 'CITYBOX', 'COMFORT HOTEL', 'LENTOASEMA', 'RVANTTA', 'CABONLINE', 'DELUXE-TAXI', 'DELUXE TAXI', 'TAXI', 'MANKKAAN TAKSI', 'MANKKAAN', 'AIRPORT', 'VUELING', 'NORWEGIAN', 'SAS ', 'EUROWINGS', 'IBERIA', 'RYAN AIR', 'RYANAIR', 'EASYJET'],
+    },
+    dining: {
+      label: 'Dining & delivery',
+      group: 'variable',
+      color: '#c49a2a',
+      keywords: ['WOLT', 'CHICAGO1933', 'CHICAGO 1933', 'FOTOGRAFISKA', 'LE GREC', 'RESTORAN', 'RESTAURANT', 'BISTROO', 'HASSAN ASSAFI', 'GAUCHO', 'SELECTA', 'KASTRUP LUCA', 'LUCA', 'RAEHARRA', 'YA KESKUSTA', 'SCANDIC VULKAN FNB', 'SCANDIC FNB', 'HMSHOSTINT', 'FOOD', 'CAFFE', 'CAFE', 'BISTRO', 'RAVINTOLA', 'KIOSKI'],
+    },
+    fashion: {
+      label: 'Fashion',
+      group: 'variable',
+      color: '#c0436a',
+      keywords: ['ZARA', 'ARMINA', 'HUGO BOSS', 'TOMMY HILFIGER', 'TOMMY', 'SAND OUTLET', 'SAND HELSINKI', 'NORMAL HELSINKI', 'NORMAL', 'NOTINO', 'H&M', 'MANGO'],
+    },
+    sports: {
+      label: 'Sports & wellness',
+      group: 'variable',
+      color: '#22a87a',
+      keywords: ['MURTSICENTER', 'ALLAS SEA', 'ALLAS', 'ELAMUSSPA', 'ELAMUS SPA', 'PUHDASPLUS'],
+    },
+    personalCare: {
+      label: 'Personal care',
+      group: 'variable',
+      color: '#d4856a',
+      keywords: ['APTEEKKI', 'KAARTIN APTEEKK', 'KAARTIN KAMPAAM', 'SALON DE NIRO', 'DE NIRO', 'KAMPAAM', 'PHARMACY'],
+    },
+    cityServices: {
+      label: 'Helsinki city services',
+      group: 'admin',
+      color: '#8e5ba8',
+      keywords: ['KAUPUNKIYMPÄRISTÖN', 'PTLHELSINGIN', 'PTL HELSINGIN', 'KAUPUNKI', 'KAUPUNKIY'],
+    },
+    dutyFree: {
+      label: 'Duty free',
+      group: 'admin',
+      color: '#6e67c8',
+      keywords: ['DUTY FREE', 'HEINEMANN', 'AVGAN', 'DUTY-FREE'],
+    },
+    oneOffs: {
+      label: 'Notable one-offs',
+      group: 'admin',
+      color: '#b07820',
+      keywords: ['GIGANTTI', 'VERKKOKAUPPA', 'LOVESPACE', 'TEMU', 'MYSTAR', 'POSTI', 'KUKKAKAUPPA', 'VANDAS', 'EMBASSY', 'SUDAMEPTEEK'],
+    },
+    runningCosts: {
+      label: 'Running costs',
+      group: 'admin',
+      color: '#5a5a52',
+      keywords: ['HSL MOBIILI', 'HSL', 'GOOGLE', 'THREE IRELAND', 'THREE IRELA', 'EUROPARK', 'EASYPARK', 'VOTINGPARTNER', 'VOTING', 'GOOGLE ONE'],
+    },
+  };
+
+  // Group definitions for the P&L statement
+  const GROUPS = {
+    fixed:     { label: 'Fixed obligations', order: 0 },
+    groceries: { label: 'Groceries',         order: 1 },
+    variable:  { label: 'Variable spending', order: 2 },
+    admin:     { label: 'Admin',             order: 3 },
+  };
+
+  // ── Categorize a single transaction ────────────────────────────────────
+  function categorize(transaction) {
+    const merchant = (transaction.merchant + ' ' + (transaction.rawMerchant || '')).toUpperCase();
+
+    for (const [key, cat] of Object.entries(CATEGORIES)) {
+      for (const kw of cat.keywords) {
+        if (merchant.includes(kw.toUpperCase())) {
+          return { ...transaction, category: key, categoryLabel: cat.label, categoryGroup: cat.group, categoryColor: cat.color };
+        }
+      }
+    }
+
+    // Fallback: try country-based hints
+    if (transaction.country === 'IRL' || transaction.country === 'IE') {
+      // Irish transactions that weren't caught
+      return { ...transaction, category: 'oneOffs', categoryLabel: 'Notable one-offs', categoryGroup: 'admin', categoryColor: CATEGORIES.oneOffs.color };
+    }
+
+    return { ...transaction, category: 'runningCosts', categoryLabel: 'Running costs', categoryGroup: 'admin', categoryColor: CATEGORIES.runningCosts.color };
+  }
+
+  // ── Categorize all transactions in a statement ─────────────────────────
+  function categorizeAll(statement) {
+    return {
+      ...statement,
+      transactions: statement.transactions.map(categorize)
+    };
+  }
+
+  // ── Aggregate transactions into category totals for a set of statements ─
+  function aggregate(statements) {
+    const months = statements.map(s => s.periodLabel);
+
+    // Build per-month totals for each category
+    const catTotals = {};
+    Object.keys(CATEGORIES).forEach(key => {
+      catTotals[key] = statements.map(() => 0);
+    });
+
+    statements.forEach((stmt, mi) => {
+      stmt.transactions.forEach(tx => {
+        if (tx.amount > 0 && tx.category && catTotals[tx.category] !== undefined) {
+          catTotals[tx.category][mi] += tx.amount;
+        }
+      });
+    });
+
+    // Round values
+    Object.keys(catTotals).forEach(key => {
+      catTotals[key] = catTotals[key].map(v => Math.round(v));
+    });
+
+    // Compute monthly gross
+    const monthlyGross = statements.map((_, mi) =>
+      Object.values(catTotals).reduce((s, arr) => s + arr[mi], 0)
+    );
+
+    return { months, catTotals, monthlyGross, categories: CATEGORIES, groups: GROUPS };
+  }
+
+  // ── Get color for a category key ──────────────────────────────────────
+  function color(key) {
+    return CATEGORIES[key]?.color || '#6b6560';
+  }
+
+  function label(key) {
+    return CATEGORIES[key]?.label || key;
+  }
+
+  return { categorize, categorizeAll, aggregate, color, label, CATEGORIES, GROUPS };
+})();
+
+</script>
+<script>
+/* store.js — IndexedDB persistence layer for Nordea Tracker
+   Stores parsed + categorized statements so data survives page refreshes.
+*/
+
+const Store = (() => {
+  const DB_NAME    = 'NordeaTracker';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'statements';
+  let db = null;
+
+  // ── Open / create DB ──────────────────────────────────────────────────
+  function open() {
+    if (db) return Promise.resolve(db);
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = e => {
+        const _db = e.target.result;
+        if (!_db.objectStoreNames.contains(STORE_NAME)) {
+          const store = _db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+          store.createIndex('period', 'period', { unique: true });
+          store.createIndex('invoiceDate', 'invoiceDate', { unique: false });
+        }
+      };
+      req.onsuccess = e => { db = e.target.result; resolve(db); };
+      req.onerror   = e => reject(e.target.error);
+    });
+  }
+
+  // ── Save a parsed statement (upsert by period) ────────────────────────
+  async function save(statement) {
+    const _db = await open();
+    return new Promise((resolve, reject) => {
+      const tx = _db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      // Check if this period already exists
+      const idx = store.index('period');
+      const getReq = idx.get(statement.period);
+      getReq.onsuccess = e => {
+        const existing = e.target.result;
+        const record = { ...statement };
+        if (existing) record.id = existing.id; // overwrite
+        const putReq = store.put(record);
+        putReq.onsuccess = () => resolve(putReq.result);
+        putReq.onerror   = () => reject(putReq.error);
+      };
+      getReq.onerror = () => reject(getReq.error);
+    });
+  }
+
+  // ── Load all statements, sorted by invoiceDate asc ───────────────────
+  async function loadAll() {
+    const _db = await open();
+    return new Promise((resolve, reject) => {
+      const tx = _db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.getAll();
+      req.onsuccess = e => {
+        const rows = e.target.result || [];
+        rows.sort((a, b) => (a.invoiceDate || '').localeCompare(b.invoiceDate || ''));
+        resolve(rows);
+      };
+      req.onerror = e => reject(e.target.error);
+    });
+  }
+
+  // ── Delete a statement by id ──────────────────────────────────────────
+  async function remove(id) {
+    const _db = await open();
+    return new Promise((resolve, reject) => {
+      const tx = _db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror   = e => reject(e.target.error);
+    });
+  }
+
+  // ── Count stored statements ───────────────────────────────────────────
+  async function count() {
+    const _db = await open();
+    return new Promise((resolve, reject) => {
+      const tx = _db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).count();
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror   = e => reject(e.target.error);
+    });
+  }
+
+  return { save, loadAll, remove, count };
+})();
+
+</script>
+<script>
+/* app.js — Main application for Nordea Spending Tracker
+   Handles navigation, chart rendering, table building, file upload, and
+   the animated financial background canvas.
+*/
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── ANIMATED BACKGROUND ───────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+(function initBackground() {
+  const canvas = document.getElementById('bgCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, points = [], lines = [];
+
+  function resize() {
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+
+  // Generate a faint candlestick-like chart pattern
+  function generateChart() {
+    lines = [];
+    const cols = Math.ceil(W / 40);
+    let y = H * 0.5;
+    for (let i = 0; i <= cols; i++) {
+      const x = i * 40;
+      const open  = y;
+      const close = y + (Math.random() - 0.5) * 60;
+      const high  = Math.min(open, close) - Math.random() * 20;
+      const low   = Math.max(open, close) + Math.random() * 20;
+      lines.push({ x, open, close, high, low });
+      y = close;
+    }
+  }
+
+  // Floating grid dots
+  function generatePoints(n) {
+    points = [];
+    for (let i = 0; i < n; i++) {
+      points.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: (Math.random() - 0.5) * 0.15,
+        r: Math.random() * 1.2 + 0.3
+      });
+    }
+  }
+
+  let chartOffset = 0;
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw grid
+    ctx.strokeStyle = 'rgba(201,168,76,0.04)';
+    ctx.lineWidth = 1;
+    const gridSize = 60;
+    for (let x = 0; x < W; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // Draw scrolling candlestick chart
+    chartOffset = (chartOffset + 0.1) % 40;
+    lines.forEach((c, idx) => {
+      const x = c.x - chartOffset;
+      const bull = c.close < c.open;
+      const color = bull ? 'rgba(52,211,153,0.12)' : 'rgba(248,113,113,0.10)';
+
+      // Wick
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, c.high); ctx.lineTo(x, c.low);
+      ctx.stroke();
+
+      // Body
+      ctx.fillStyle = color;
+      const bodyH = Math.abs(c.close - c.open) || 2;
+      ctx.fillRect(x - 5, Math.min(c.open, c.close), 10, bodyH);
+    });
+
+    // Draw moving price line
+    ctx.strokeStyle = 'rgba(201,168,76,0.08)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    lines.forEach((c, i) => {
+      const x = c.x - chartOffset;
+      if (i === 0) ctx.moveTo(x, c.close);
+      else ctx.lineTo(x, c.close);
+    });
+    ctx.stroke();
+
+    // Floating dots (nodes)
+    points.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(201,168,76,0.25)';
+      ctx.fill();
+    });
+
+    // Connect nearby dots
+    ctx.strokeStyle = 'rgba(201,168,76,0.06)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < points.length; i++) {
+      for (let j = i + 1; j < points.length; j++) {
+        const dx = points[i].x - points[j].x;
+        const dy = points[i].y - points[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 100) {
+          ctx.beginPath();
+          ctx.moveTo(points[i].x, points[i].y);
+          ctx.lineTo(points[j].x, points[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  generateChart();
+  generatePoints(50);
+  draw();
+  window.addEventListener('resize', () => { resize(); generateChart(); generatePoints(50); });
+})();
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── CHART.JS DEFAULTS ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+Chart.defaults.color = '#7a7568';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+const CHART_INSTANCES = {};
+
+function destroyChart(id) {
+  if (CHART_INSTANCES[id]) { CHART_INSTANCES[id].destroy(); delete CHART_INSTANCES[id]; }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── STATE ─────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+let allStatements = [];
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── NAVIGATION ────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    if (btn.dataset.view === 'transactions') renderTransactions();
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── UPLOAD HANDLING ───────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+const uploadZone = document.getElementById('uploadZone');
+const fileInput  = document.getElementById('fileInput');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  processFiles(Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.pdf')));
+});
+fileInput.addEventListener('change', e => {
+  processFiles(Array.from(e.target.files));
+  fileInput.value = '';
+});
+
+async function processFiles(files) {
+  if (!files.length) return;
+  const statusEl = document.getElementById('parseStatus');
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = '';
+
+  for (const file of files) {
+    statusEl.innerHTML += `<div class="working">⟳ Parsing ${file.name}…</div>`;
+    try {
+      const buf = await file.arrayBuffer();
+      let stmt = await NordeaParser.parse(buf, file.name);
+      stmt = Categorizer.categorizeAll(stmt);
+      await Store.save(stmt);
+      statusEl.innerHTML += `<div class="ok">✓ ${stmt.periodLabel} — ${stmt.txCount} transactions · €${stmt.grossSpend.toLocaleString()}</div>`;
+    } catch (err) {
+      statusEl.innerHTML += `<div class="err">✗ ${file.name} — ${err.message}</div>`;
+      console.error(err);
+    }
+  }
+
+  await refreshData();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── DATA REFRESH ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+async function refreshData() {
+  allStatements = await Store.loadAll();
+  renderStatementsList();
+  renderDashboard();
+  renderTransactions();
+  updateHeader();
+}
+
+function updateHeader() {
+  const meta = document.getElementById('headerMeta');
+  if (!allStatements.length) { meta.textContent = 'No data yet'; return; }
+  const last = allStatements[allStatements.length - 1];
+  meta.textContent = `${allStatements.length} statements · Latest: ${last.periodLabel}`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── STATEMENTS LIST ───────────────────────────────────────────────════════
+// ══════════════════════════════════════════════════════════════════════════
+function renderStatementsList() {
+  const card = document.getElementById('statementsCard');
+  const tbody = document.getElementById('statementsBody');
+  if (!allStatements.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  tbody.innerHTML = allStatements.map(s => `
+    <tr>
+      <td>${s.periodLabel}</td>
+      <td>${s.invoiceDate || '—'}</td>
+      <td style="color:var(--text);font-family:var(--mono)">€${s.grossSpend.toLocaleString()}</td>
+      <td style="color:var(--gold);font-family:var(--mono)">€${(s.totalBalance||0).toLocaleString('fi-FI',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="color:var(--text-dim)">${s.txCount}</td>
+      <td><button class="btn-del" data-id="${s.id}">Delete</button></td>
+    </tr>
+  `).join('');
+
+  tbody.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (confirm('Delete this statement?')) {
+        await Store.remove(Number(btn.dataset.id));
+        await refreshData();
+      }
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── DASHBOARD ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+function renderDashboard() {
+  if (!allStatements.length) return;
+  const agg = Categorizer.aggregate(allStatements);
+  renderKPIs(agg);
+  renderOverviewChart(agg);
+  renderGroceryChart(agg);
+  renderDonutChart(agg);
+  renderTrendChart(agg);
+  renderAdminChart(agg);
+  renderPLTable(agg);
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────
+function renderKPIs(agg) {
+  const n = agg.months.length;
+  const totalSpend = agg.monthlyGross.reduce((s,v) => s+v, 0);
+  const avgSpend   = Math.round(totalSpend / n);
+  const latest     = agg.monthlyGross[n-1];
+  const prev       = n > 1 ? agg.monthlyGross[n-2] : null;
+  const change     = prev ? Math.round((latest - prev) / prev * 100) : null;
+  const balance    = allStatements[n-1]?.totalBalance || 0;
+  const dueDate    = allStatements[n-1]?.dueDate || '';
+
+  const kpis = [
+    { label: 'Total spend', value: `€${totalSpend.toLocaleString()}`, sub: `${n} months`, cls: '' },
+    { label: 'Monthly avg',  value: `€${avgSpend.toLocaleString()}`,    sub: 'per period', cls: '' },
+    { label: 'Latest month', value: `€${latest.toLocaleString()}`,
+      sub: change !== null ? `${change >= 0 ? '+' : ''}${change}% vs prior` : agg.months[n-1],
+      cls: change !== null ? (change < 0 ? 'green' : 'red') : '' },
+    { label: 'Balance due',  value: `€${balance.toLocaleString('fi-FI',{minimumFractionDigits:2})}`,
+      sub: dueDate ? `Due ${dueDate}` : '', cls: balance > 0 ? 'red' : 'green' }
+  ];
+
+  const row = document.getElementById('kpiRow');
+  row.innerHTML = kpis.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-inner">
+        <div class="kpi-label">${k.label}</div>
+        <div class="kpi-value ${k.cls}">${k.value}</div>
+        ${k.sub ? `<div class="kpi-sub">${k.sub}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── OVERVIEW STACKED BAR ──────────────────────────────────────────────────
+function renderOverviewChart(agg) {
+  destroyChart('overview');
+  const groups = [
+    { keys: ['housing','gym'], label: 'Fixed',              color: '#3a7abf' },
+    { keys: ['sok','kesko','lidl','grocOther'], label: 'Groceries', color: '#4a9c35' },
+    { keys: ['travel'],        label: 'Travel',             color: '#7c6fd4' },
+    { keys: ['dining'],        label: 'Dining',             color: '#c49a2a' },
+    { keys: ['fashion'],       label: 'Fashion',            color: '#c0436a' },
+    { keys: ['sports','personalCare'], label: 'Health & care', color: '#22a87a' },
+    { keys: ['cityServices','dutyFree'], label: 'City & duty free', color: '#8e5ba8' },
+    { keys: ['oneOffs','runningCosts'], label: 'One-offs & running', color: '#6b6560' },
+  ];
+
+  const datasets = groups.map(g => ({
+    label: g.label,
+    data: agg.months.map((_, i) => g.keys.reduce((s, k) => s + (agg.catTotals[k]?.[i] || 0), 0)),
+    backgroundColor: g.color,
+    borderWidth: 0,
+  }));
+
+  // Build legend
+  const legendEl = document.getElementById('overviewLegend');
+  legendEl.innerHTML = groups.map(g =>
+    `<div class="legend-item"><div class="legend-swatch" style="background:${g.color}"></div>${g.label}</div>`
+  ).join('');
+
+  CHART_INSTANCES.overview = new Chart(document.getElementById('overviewChart'), {
+    type: 'bar',
+    data: { labels: agg.months, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: c => ` ${c.dataset.label}: €${c.raw.toLocaleString()}`,
+          footer: items => `Total: €${items.reduce((s,i)=>s+i.raw,0).toLocaleString()}`
+        }}
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { color: '#7a7568' } },
+        y: { stacked: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#7a7568', callback: v => '€'+v.toLocaleString() } }
+      }
+    }
+  });
+}
+
+// ── GROCERY CHAIN BAR ─────────────────────────────────────────────────────
+function renderGroceryChart(agg) {
+  destroyChart('groc');
+  const sets = [
+    { key: 'sok',       label: 'SOK',    color: '#1a8a68' },
+    { key: 'kesko',     label: 'Kesko',  color: '#3a7abf' },
+    { key: 'lidl',      label: 'Lidl',   color: '#c04a42' },
+    { key: 'grocOther', label: 'Other',  color: '#6b6560' },
+  ];
+  CHART_INSTANCES.groc = new Chart(document.getElementById('grocChart'), {
+    type: 'bar',
+    data: {
+      labels: agg.months,
+      datasets: sets.map(s => ({ label: s.label, data: agg.catTotals[s.key] || [], backgroundColor: s.color, borderWidth: 0 }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#7a7568', boxWidth: 10, padding: 10 } }, tooltip: { callbacks: { footer: items => `Total: €${items.reduce((s,i)=>s+i.raw,0).toLocaleString()}` } } },
+      scales: { x: { stacked: true, grid: { display: false }, ticks: { color: '#7a7568' } }, y: { stacked: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#7a7568', callback: v => '€'+v } } }
+    }
+  });
+}
+
+// ── CATEGORY DONUT ────────────────────────────────────────────────────────
+function renderDonutChart(agg) {
+  destroyChart('donut');
+  const groups = [
+    { keys: ['housing','gym'], label: 'Fixed',    color: '#3a7abf' },
+    { keys: ['sok','kesko','lidl','grocOther'], label: 'Groceries', color: '#4a9c35' },
+    { keys: ['travel'],  label: 'Travel',   color: '#7c6fd4' },
+    { keys: ['dining'],  label: 'Dining',   color: '#c49a2a' },
+    { keys: ['fashion'], label: 'Fashion',  color: '#c0436a' },
+    { keys: ['sports','personalCare'], label: 'Health', color: '#22a87a' },
+    { keys: ['cityServices','dutyFree','oneOffs','runningCosts'], label: 'Admin & misc', color: '#8e5ba8' },
+  ];
+
+  const totals = groups.map(g => g.keys.reduce((s, k) => s + (agg.catTotals[k] || []).reduce((a,b)=>a+b,0), 0));
+
+  CHART_INSTANCES.donut = new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: groups.map(g => g.label),
+      datasets: [{ data: totals, backgroundColor: groups.map(g => g.color), borderWidth: 0, hoverOffset: 8 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: {
+        legend: { position: 'right', labels: { color: '#7a7568', boxWidth: 10, padding: 10, font: { size: 11 } } },
+        tooltip: { callbacks: { label: c => ` ${c.label}: €${c.raw.toLocaleString()}` } }
+      }
+    }
+  });
+}
+
+// ── TREND LINES ───────────────────────────────────────────────────────────
+function renderTrendChart(agg) {
+  destroyChart('trend');
+  const grocData = agg.months.map((_, i) => ['sok','kesko','lidl','grocOther'].reduce((s,k) => s+(agg.catTotals[k]?.[i]||0), 0));
+  const sets = [
+    { label: 'Groceries', data: grocData, color: '#4a9c35', fill: true },
+    { label: 'Travel',    data: agg.catTotals.travel || [], color: '#7c6fd4', fill: false },
+    { label: 'Dining',    data: agg.catTotals.dining || [], color: '#c49a2a', fill: false },
+    { label: 'Fashion',   data: agg.catTotals.fashion|| [], color: '#c0436a', fill: false },
+  ];
+  CHART_INSTANCES.trend = new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: agg.months,
+      datasets: sets.map(s => ({ label: s.label, data: s.data, borderColor: s.color, backgroundColor: s.fill ? s.color+'22' : 'transparent', tension: 0.35, pointRadius: 4, fill: s.fill, borderWidth: 2 }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#7a7568', boxWidth: 10, padding: 10 } }, tooltip: { callbacks: { label: c => ` ${c.dataset.label}: €${c.raw}` } } },
+      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a7568' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a7568', callback: v => '€'+v } } }
+    }
+  });
+}
+
+// ── ADMIN BREAKDOWN ───────────────────────────────────────────────────────
+function renderAdminChart(agg) {
+  destroyChart('admin');
+  const sets = [
+    { key: 'cityServices', label: 'City services', color: '#8e5ba8' },
+    { key: 'dutyFree',     label: 'Duty free',     color: '#7c6fd4' },
+    { key: 'oneOffs',      label: 'One-offs',      color: '#c49a2a' },
+    { key: 'runningCosts', label: 'Running',       color: '#6b6560' },
+  ];
+  CHART_INSTANCES.admin = new Chart(document.getElementById('adminChart'), {
+    type: 'bar',
+    data: {
+      labels: agg.months,
+      datasets: sets.map(s => ({ label: s.label, data: agg.catTotals[s.key]||[], backgroundColor: s.color, borderWidth: 0 }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#7a7568', boxWidth: 10, padding: 10 } }, tooltip: { callbacks: { footer: items => `Total: €${items.reduce((s,i)=>s+i.raw,0).toLocaleString()}` } } },
+      scales: { x: { stacked: true, grid: { display: false }, ticks: { color: '#7a7568' } }, y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a7568', callback: v => '€'+v } } }
+    }
+  });
+}
+
+// ── P&L TABLE ─────────────────────────────────────────────────────────────
+function renderPLTable(agg) {
+  const n = agg.months.length;
+  const gt = agg.monthlyGross.reduce((s,v)=>s+v,0);
+  function row(label, arr, cls, indent) {
+    const t = arr.reduce((s,v)=>s+v,0);
+    const cells = arr.map(v => `<td class="${cls||''}">${v===0?'<span class="dim">—</span>':v.toLocaleString()}</td>`).join('');
+    const labelCell = indent
+      ? `<td style="padding-left:18px;font-size:11px;color:var(--text-dim)">↳ ${label}</td>`
+      : `<td>${label}</td>`;
+    return `<tr class="${cls||''}">${labelCell}${cells}<td class="${cls||''}">${t.toLocaleString()}</td><td style="font-size:10px;color:var(--text-dim)">${(t/gt*100).toFixed(1)}%</td></tr>`;
+  }
+  function secHdr(label) {
+    return `<tr class="sec-hdr"><td colspan="${n+3}">${label}</td></tr>`;
+  }
+  function stRow(label, arr) {
+    const t = arr.reduce((s,v)=>s+v,0);
+    return `<tr class="subtotal"><td>${label}</td>${arr.map(v=>`<td>${v.toLocaleString()}</td>`).join('')}<td>${t.toLocaleString()}</td><td></td></tr>`;
+  }
+  function totRow(label, arr) {
+    const t = arr.reduce((s,v)=>s+v,0);
+    return `<tr class="total-row"><td>${label}</td>${arr.map(v=>`<td>${v.toLocaleString()}</td>`).join('')}<td>${t.toLocaleString()}</td><td></td></tr>`;
+  }
+  function momRow() {
+    const labels = agg.months.map((_, i) => {
+      if (i === 0) return 'base';
+      const pct = Math.round((agg.monthlyGross[i] - agg.monthlyGross[i-1]) / agg.monthlyGross[i-1] * 100);
+      return `<span class="${pct>=0?'red':'green'}">${pct>=0?'+':''}${pct}%</span>`;
+    });
+    return `<tr class="mom-row"><td>Month-on-month</td>${labels.map(l=>`<td>${l}</td>`).join('')}<td colspan="2"></td></tr>`;
+  }
+
+  const C = agg.catTotals;
+  const getArr = key => C[key] || agg.months.map(()=>0);
+  const sumKeys = keys => agg.months.map((_,i) => keys.reduce((s,k) => s+(C[k]?.[i]||0),0));
+  const fixedArr = sumKeys(['housing','gym']);
+  const grocArr  = sumKeys(['sok','kesko','lidl','grocOther']);
+
+  const thead = `<thead><tr>
+    <th style="text-align:left">Category</th>
+    ${agg.months.map(m=>`<th>${m}</th>`).join('')}
+    <th>Total</th><th>%</th>
+  </tr></thead>`;
+
+  let html = thead + '<tbody>';
+  html += secHdr('Fixed obligations');
+  html += row('Student housing · Dublin', getArr('housing'), '', false);
+  html += row('Gym · SATS', getArr('gym'), '', false);
+  html += stRow('Fixed total', fixedArr);
+
+  html += secHdr('Groceries');
+  html += row('SOK (Prisma + S-Market)', getArr('sok'), 'sub-row', true);
+  html += row('Kesko (K-stores)', getArr('kesko'), 'sub-row', true);
+  html += row('Lidl', getArr('lidl'), 'sub-row', true);
+  html += row('Other (canteen · Alko · Tokmanni)', getArr('grocOther'), 'sub-row', true);
+  html += stRow('Groceries total', grocArr);
+
+  html += secHdr('Variable spending');
+  html += row('Travel', getArr('travel'), '', false);
+  html += row('Dining out & delivery', getArr('dining'), '', false);
+  html += row('Fashion & clothing', getArr('fashion'), '', false);
+  html += row('Sports & wellness', getArr('sports'), '', false);
+  html += row('Personal care', getArr('personalCare'), '', false);
+
+  html += secHdr('Admin — clean structure');
+  html += row('Helsinki city services', getArr('cityServices'), 'gold', false);
+  html += row('Duty free', getArr('dutyFree'), 'gold', false);
+  html += row('Notable one-offs', getArr('oneOffs'), 'gold', false);
+  html += row('Running costs', getArr('runningCosts'), '', false);
+
+  html += totRow('Gross spending', agg.monthlyGross);
+  html += momRow();
+  html += '</tbody>';
+
+  document.getElementById('plTable').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── TRANSACTIONS VIEW ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+function renderTransactions() {
+  if (!allStatements.length) return;
+
+  // Populate filter dropdowns
+  const monthSel = document.getElementById('filterMonth');
+  const catSel   = document.getElementById('filterCat');
+
+  monthSel.innerHTML = '<option value="">All periods</option>' +
+    allStatements.map(s => `<option value="${s.period}">${s.periodLabel}</option>`).join('');
+
+  const catKeys = [...new Set(allStatements.flatMap(s => s.transactions.map(t => t.category)).filter(Boolean))];
+  catSel.innerHTML = '<option value="">All categories</option>' +
+    catKeys.map(k => `<option value="${k}">${Categorizer.label(k)}</option>`).join('');
+
+  function filterAndRender() {
+    const mFilter = monthSel.value;
+    const cFilter = catSel.value;
+    const search  = document.getElementById('filterSearch').value.toLowerCase();
+
+    let txs = allStatements.flatMap(s =>
+      s.transactions.map(t => ({ ...t, period: s.period, periodLabel: s.periodLabel }))
+    );
+
+    if (mFilter) txs = txs.filter(t => t.period === mFilter);
+    if (cFilter) txs = txs.filter(t => t.category === cFilter);
+    if (search)  txs = txs.filter(t => t.merchant.toLowerCase().includes(search));
+
+    txs.sort((a,b) => b.date.localeCompare(a.date));
+
+    document.getElementById('txCount').textContent = `${txs.length} transactions`;
+    document.getElementById('txBody').innerHTML = txs.length ? txs.map(t => {
+      const color = Categorizer.color(t.category);
+      const isNeg = t.amount < 0;
+      return `<tr>
+        <td>${t.date}</td>
+        <td style="text-align:left;max-width:220px;overflow:hidden;text-overflow:ellipsis">${t.merchant}</td>
+        <td style="text-align:left"><span class="cat-badge" style="background:${color}22;color:${color}">${Categorizer.label(t.category)}</span></td>
+        <td style="text-align:left;color:var(--text-dim);font-size:11px">${t.country||''}</td>
+        <td class="num ${isNeg?'green':''}">€${Math.abs(t.amount).toLocaleString('fi-FI',{minimumFractionDigits:2})}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="5" class="empty-msg">No transactions match</td></tr>';
+  }
+
+  document.getElementById('filterMonth').addEventListener('change', filterAndRender);
+  document.getElementById('filterCat').addEventListener('change', filterAndRender);
+  document.getElementById('filterSearch').addEventListener('input', filterAndRender);
+  filterAndRender();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── INIT ──────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+(async () => {
+  await refreshData();
+})();
+
+</script>
 </body>
 </html>
